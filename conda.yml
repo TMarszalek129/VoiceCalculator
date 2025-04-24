@@ -1,0 +1,12 @@
+dependencies:
+ - pip=21.2.4
+ - numpy
+ - python=3.9.6
+ - pip:
+   - numpy
+   - SpeechRecognition
+   - pyaudio
+   - scipy
+   - matplotlib
+   - scikit-learn
+   - pyttsx3
