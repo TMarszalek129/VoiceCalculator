@@ -3,6 +3,7 @@ import pyttsx3
 import time
 import re
 import math
+import winsound
 
 class VoiceCalculator:
     def __init__(self):
@@ -23,9 +24,11 @@ class VoiceCalculator:
 
     def give_instruction(self):
         with sr.Microphone() as mike:
-            self.engine.say("Podaj swoje działanie, gdy zobaczysz komunikat. Jeśli chcesz zakończyć, powiedz stop.")
+            self.engine.say("Podaj swoje działanie, po usłyszeniu dźwięku. Jeśli chcesz zakończyć, powiedz stop.")
             self.engine.runAndWait()
-            print("Mów!!!")
+            duration = 200  # milliseconds
+            freq = 440  # Hz
+            winsound.Beep(freq, duration)
             self.r.adjust_for_ambient_noise(mike)
             self.audio_text = self.r.listen(mike, phrase_time_limit=300, timeout=300)
             self.engine.say("Dzięki!")
@@ -41,13 +44,16 @@ class VoiceCalculator:
             "razy": "*",
             "x" : "*",
             "podzielić przez": "/",
+            "dzielone na" : "/",
             "podzielić": "/",
             # "na " : '/',
             "do potęgi": "**",
             "potęgi" : "**",
             "otwórz nawias": "(",
             "zamknij nawias": ")",
-            "zamknij" : ")"
+            "zamknij" : ")",
+            "koniec" : ")",
+            "otwórz" : "("
         }
         for word, symbol in replacements.items():
             text = text.replace(word, symbol)
@@ -58,6 +64,7 @@ class VoiceCalculator:
         return text
 
     def preprocess_sqrt_fact(self, elements):
+        # print("SQRT, Fact")
         if "pierwiastek" in elements:
             idx = elements.index("pierwiastek")
             expression = "math.sqrt({})"
@@ -78,36 +85,28 @@ class VoiceCalculator:
             self.result = eval(expression.format(number))
             if math.fmod(self.result, 1.0) == 0:
                 self.result = int(self.result)
+            else:
+                self.result = round(self.result, 2)
             # self.engine.say(f"Pierwiastek z {number} to {self.result}")
             # self.engine.runAndWait()
             # return
             self.engine.say(f"Rezultat to {self.result}")
             print("Rezultat to ", self.result)
             self.engine.runAndWait()
-            # return
 
-        # if "silnia" in elements:
-        #     idx = elements.index("silnia")
-        #     number = None
-        #     if idx > 0 and elements[idx - 1] == "z" and idx > 1 and elements[idx - 2].isdigit():
-        #         number = int(elements[idx - 2])
-        #     elif idx < len(elements) - 1 and elements[idx + 1] == "z" and idx < len(elements) - 2 and elements[
-        #         idx + 2].isdigit():
-        #         number = int(elements[idx + 2])
-        #     elif idx > 0 and elements[idx - 1].isdigit():
-        #         number = int(elements[idx - 1])
-        #     elif idx < len(elements) - 1 and elements[idx + 1].isdigit():
-        #         number = int(elements[idx + 1])
-        #
-        #     if number is not None:
-        #         self.result = math.factorial(number)
-        #         # self.engine.say(f"Silnia z {number} to {self.result}")
-        #         # self.engine.runAndWait()
-        #         # return
-        #         self.engine.say(f"Rezultat to {self.result}")
-        #         print("Rezultat to ", self.result)
-        #         self.engine.runAndWait()
-        #         return
+
+    def preprocess_multi_digit(self, elements):
+        # print("I am here")
+        # IT DOES NOT WORK YET
+        replacements = {
+            "tysiące" : "*1000+",
+            "tysięcy" : "*1000+",
+            "tysiąc" : "*1000+"
+        }
+        for word, symbol in replacements.items():
+            elements = elements.replace(word, symbol)
+        return elements
+
 
     def calculate(self):
         try:
@@ -123,10 +122,13 @@ class VoiceCalculator:
             clean_text = self.preprocess_text(self.recognize)
             print("Po przetworzeniu:", clean_text)
             elements = clean_text.split()
-
+            if "tysiące" in elements or "tysiąc" in elements or "tysięcy" in elements:
+                elements = self.preprocess_multi_digit(elements)
             if "pierwiastek" in elements or "silnia" in elements:
                 self.preprocess_sqrt_fact(elements)
                 return
+
+
 
             # if "pierwiastek" in elements:
             #     idx = elements.index("pierwiastek")
@@ -177,6 +179,8 @@ class VoiceCalculator:
             self.result = eval(expression)
             if math.fmod(self.result, 1.0) == 0:
                 self.result = int(self.result)
+            else:
+                self.result = round(self.result, 2)
             self.engine.say(f"Rezultat to {self.result}")
             print("Rezultat to ", self.result)
             self.engine.runAndWait()
