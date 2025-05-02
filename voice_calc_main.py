@@ -30,7 +30,7 @@ class VoiceCalculator:
             freq = 440  # Hz
             winsound.Beep(freq, duration)
             self.r.adjust_for_ambient_noise(mike)
-            self.audio_text = self.r.listen(mike, phrase_time_limit=300, timeout=300)
+            self.audio_text = self.r.listen(mike, phrase_time_limit=5000, timeout=5000)
             self.engine.say("Dzięki!")
             self.engine.runAndWait()
 
@@ -40,12 +40,14 @@ class VoiceCalculator:
 
         replacements = {
             "plus": "+",
+            "dodać" : "+",
             "minus": "-",
             "razy": "*",
             "x" : "*",
             "podzielić przez": "/",
             "dzielone na" : "/",
             "podzielić": "/",
+            "dzielone" : "/",
             # "na " : '/',
             "do potęgi": "**",
             "potęgi" : "**",
@@ -53,7 +55,8 @@ class VoiceCalculator:
             "zamknij nawias": ")",
             "zamknij" : ")",
             "koniec" : ")",
-            "otwórz" : "("
+            "otwórz" : "(",
+            "√" : "pierwiastek "
         }
         for word, symbol in replacements.items():
             text = text.replace(word, symbol)
@@ -79,25 +82,20 @@ class VoiceCalculator:
         #     elements[idx] = expression.format(number)
         #     print(elements)
         if idx < len(elements) - 1 and elements[idx + 1] == "z" and idx < len(elements) - 2 and elements[idx + 2].isdigit():
-            print("Second condition")
             number = int(elements[idx + 2])
-            print(number)
             elements.pop(idx)
             elements.pop(idx)
             elements[idx] = expression.format(number)
-            print(elements)
         elif idx > 0 and elements[idx - 1].isdigit():
-            print("Third condition")
             number = int(elements[idx - 1])
             elements.pop(idx)
             elements[idx - 1] = expression.format(number)
-            print(elements)
         elif idx < len(elements) - 1 and elements[idx + 1].isdigit():
-            print('Fourth condition')
             number = int(elements[idx + 1])
             elements.pop(idx)
             elements[idx] = expression.format(number)
-        print(elements)
+        else:
+            raise Exception
         return elements
 
         # if number is not None:
@@ -143,9 +141,8 @@ class VoiceCalculator:
             elements = clean_text.split()
             if "tysiące" in elements or "tysiąc" in elements or "tysięcy" in elements:
                 elements = self.preprocess_multi_digit(elements)
-            if "pierwiastek" in elements or "silnia" in elements:
+            while "pierwiastek" in elements or "silnia" in elements:
                 elements = self.preprocess_sqrt_fact(elements)
-                print(elements)
 
             expression = ''.join([e for e in elements if e != "z"])
             print("Wyrażenie do obliczenia:", expression)
