@@ -16,11 +16,11 @@ class VoiceCalculator:
         self.result = 0
         self.exit = False
 
-        # self.word_to_num = {
-        #     "zero": "0", "jeden": "1", "dwa": "2", "trzy": "3", "cztery": "4",
-        #     "pięć": "5", "sześć": "6", "siedem": "7", "osiem": "8", "dziewięć": "9",
-        #     "dziesięć": "10"
-        # }
+        self.word_to_num = {
+            "zero": "0", "jeden": "1", "dwa": "2", "trzy": "3", "cztery": "4",
+            "pięć": "5", "sześć": "6", "siedem": "7", "osiem": "8", "dziewięć": "9",
+            "dziesięć": "10"
+        }
 
     def give_instruction(self):
         with sr.Microphone() as mike:
@@ -58,13 +58,12 @@ class VoiceCalculator:
         for word, symbol in replacements.items():
             text = text.replace(word, symbol)
 
-        # for word, number in self.word_to_num.items():
-        #     text = re.sub(r'\b{}\b'.format(word), number, text)
+        for word, number in self.word_to_num.items():
+            text = re.sub(r'\b{}\b'.format(word), number, text)
 
         return text
 
     def preprocess_sqrt_fact(self, elements):
-        # print("SQRT, Fact")
         if "pierwiastek" in elements:
             idx = elements.index("pierwiastek")
             expression = "math.sqrt({})"
@@ -72,40 +71,60 @@ class VoiceCalculator:
             idx = elements.index("silnia")
             expression = "math.factorial({})"
         number = None
-        if idx > 0 and elements[idx - 1] == "z" and idx > 1 and elements[idx - 2].isdigit():
-            number = int(elements[idx - 2])
-        elif idx < len(elements) - 1 and elements[idx + 1] == "z" and idx < len(elements) - 2 and elements[idx + 2].isdigit():
+        # if idx > 0 and elements[idx - 1] == "z" and idx > 1 and elements[idx - 2].isdigit():
+        #     print("First condition")
+        #     number = int(elements[idx - 2])
+        #     elements.pop(idx)
+        #     elements.pop(idx)
+        #     elements[idx] = expression.format(number)
+        #     print(elements)
+        if idx < len(elements) - 1 and elements[idx + 1] == "z" and idx < len(elements) - 2 and elements[idx + 2].isdigit():
+            print("Second condition")
             number = int(elements[idx + 2])
+            print(number)
+            elements.pop(idx)
+            elements.pop(idx)
+            elements[idx] = expression.format(number)
+            print(elements)
         elif idx > 0 and elements[idx - 1].isdigit():
+            print("Third condition")
             number = int(elements[idx - 1])
+            elements.pop(idx)
+            elements[idx - 1] = expression.format(number)
+            print(elements)
         elif idx < len(elements) - 1 and elements[idx + 1].isdigit():
+            print('Fourth condition')
             number = int(elements[idx + 1])
-
-        if number is not None:
-            self.result = eval(expression.format(number))
-            if math.fmod(self.result, 1.0) == 0:
-                self.result = int(self.result)
-            else:
-                self.result = round(self.result, 2)
-            # self.engine.say(f"Pierwiastek z {number} to {self.result}")
-            # self.engine.runAndWait()
-            # return
-            self.engine.say(f"Rezultat to {self.result}")
-            print("Rezultat to ", self.result)
-            self.engine.runAndWait()
-
-
-    def preprocess_multi_digit(self, elements):
-        # print("I am here")
-        # IT DOES NOT WORK YET
-        replacements = {
-            "tysiące" : "*1000+",
-            "tysięcy" : "*1000+",
-            "tysiąc" : "*1000+"
-        }
-        for word, symbol in replacements.items():
-            elements = elements.replace(word, symbol)
+            elements.pop(idx)
+            elements[idx] = expression.format(number)
+        print(elements)
         return elements
+
+        # if number is not None:
+        #     self.result = eval(expression.format(number))
+        #     if math.fmod(self.result, 1.0) == 0:
+        #         self.result = int(self.result)
+        #     else:
+        #         self.result = round(self.result, 2)
+        #     # self.engine.say(f"Pierwiastek z {number} to {self.result}")
+        #     # self.engine.runAndWait()
+        #     # return
+        #     self.engine.say(f"Rezultat to {self.result}")
+        #     print("Rezultat to ", self.result)
+        #     self.engine.runAndWait()
+
+
+    # def preprocess_multi_digit(self, elements):
+    #     # print("I am here")
+    #     # IT DOES NOT WORK YET
+    #     replacements = {
+    #         "tysiące" : "*1000+",
+    #         "tysięcy" : "*1000+",
+    #         "tysiąc" : "*1000+"
+    #     }
+    #     for word, symbol in replacements.items():
+    #         elements = elements.replace(word, symbol)
+    #     return elements
 
 
     def calculate(self):
@@ -125,54 +144,8 @@ class VoiceCalculator:
             if "tysiące" in elements or "tysiąc" in elements or "tysięcy" in elements:
                 elements = self.preprocess_multi_digit(elements)
             if "pierwiastek" in elements or "silnia" in elements:
-                self.preprocess_sqrt_fact(elements)
-                return
-
-
-
-            # if "pierwiastek" in elements:
-            #     idx = elements.index("pierwiastek")
-            #     number = None
-            #     if idx > 0 and elements[idx-1] == "z" and idx > 1 and elements[idx-2].isdigit():
-            #         number = int(elements[idx-2])
-            #     elif idx < len(elements)-1 and elements[idx+1] == "z" and idx < len(elements)-2 and elements[idx+2].isdigit():
-            #         number = int(elements[idx+2])
-            #     elif idx > 0 and elements[idx-1].isdigit():
-            #         number = int(elements[idx-1])
-            #     elif idx < len(elements)-1 and elements[idx+1].isdigit():
-            #         number = int(elements[idx+1])
-            #
-            #     if number is not None:
-            #         self.result = math.sqrt(number)
-            #         # self.engine.say(f"Pierwiastek z {number} to {self.result}")
-            #         # self.engine.runAndWait()
-            #         # return
-            #         self.engine.say(f"Rezultat to {self.result}")
-            #         print("Rezultat to ", self.result)
-            #         self.engine.runAndWait()
-            #         return
-            #
-            # if "silnia" in elements:
-            #     idx = elements.index("silnia")
-            #     number = None
-            #     if idx > 0 and elements[idx-1] == "z" and idx > 1 and elements[idx-2].isdigit():
-            #         number = int(elements[idx-2])
-            #     elif idx < len(elements)-1 and elements[idx+1] == "z" and idx < len(elements)-2 and elements[idx+2].isdigit():
-            #         number = int(elements[idx+2])
-            #     elif idx > 0 and elements[idx-1].isdigit():
-            #         number = int(elements[idx-1])
-            #     elif idx < len(elements)-1 and elements[idx+1].isdigit():
-            #         number = int(elements[idx+1])
-            #
-            #     if number is not None:
-            #         self.result = math.factorial(number)
-            #         # self.engine.say(f"Silnia z {number} to {self.result}")
-            #         # self.engine.runAndWait()
-            #         # return
-            #         self.engine.say(f"Rezultat to {self.result}")
-            #         print("Rezultat to ", self.result)
-            #         self.engine.runAndWait()
-            #         return
+                elements = self.preprocess_sqrt_fact(elements)
+                print(elements)
 
             expression = ''.join([e for e in elements if e != "z"])
             print("Wyrażenie do obliczenia:", expression)
