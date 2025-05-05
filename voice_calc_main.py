@@ -16,10 +16,17 @@ class VoiceCalculator:
         self.result = 0
         self.exit = False
 
-        self.word_to_num = {
-            "zero": "0", "jeden": "1", "dwa": "2", "trzy": "3", "cztery": "4",
-            "pięć": "5", "sześć": "6", "siedem": "7", "osiem": "8", "dziewięć": "9",
-            "dziesięć": "10"
+        self.num_words = {
+            "minus": "-",
+            "zero": 0, "jeden": 1, "dwa": 2, "trzy": 3, "cztery": 4,
+            "pięć": 5, "sześć": 6, "siedem": 7, "osiem": 8, "dziewięć": 9,
+            "dziesięć": 10, "jedenaście": 11, "dwanaście": 12, "trzynaście": 13, "czternaście": 14,
+            "piętnaście": 15, "szesnaście": 16, "siedemnaście": 17, "osiemnaście": 18, "dziewiętnaście": 19,
+            "dwadzieścia": 20, "trzydzieści": 30, "czterdzieści": 40, "pięćdziesiąt": 50,
+            "sześćdziesiąt": 60, "siedemdziesiąt": 70, "osiemdziesiąt": 80, "dziewięćdziesiąt": 90,
+            "sto": 100, "dwieście": 200, "trzysta": 300, "czterysta": 400, "pięćset": 500,
+            "sześćset": 600, "siedemset": 700, "osiemset": 800, "dziewięćset": 900,
+            "tysiąc": 1000, "tysiące": 1000, "tysięcy": 1000
         }
 
     def give_instruction(self):
@@ -48,7 +55,6 @@ class VoiceCalculator:
             "dzielone na" : "/",
             "podzielić": "/",
             "dzielone" : "/",
-            # "na " : '/',
             "do potęgi": "**",
             "potęgi" : "**",
             "otwórz nawias": "(",
@@ -61,26 +67,69 @@ class VoiceCalculator:
         for word, symbol in replacements.items():
             text = text.replace(word, symbol)
 
-        for word, number in self.word_to_num.items():
-            text = re.sub(r'\b{}\b'.format(word), number, text)
+        text = self.replace_number_words(text)
 
         return text
+
+    def replace_number_words(self, text):
+        words = text.split()
+        result = []
+        buffer = []
+
+        for word in words:
+            if word in self.num_words or word == "minus":
+                buffer.append(word)
+            else:
+                if buffer:
+                    try:
+                        number = self.parse_number_words(buffer)
+                        result.append(str(number))
+                    except:
+                        result.extend(buffer)
+                    buffer = []
+                result.append(word)
+
+        if buffer:
+            try:
+                number = self.parse_number_words(buffer)
+                result.append(str(number))
+            except:
+                result.extend(buffer)
+
+        return ' '.join(result)
+
+    def parse_number_words(self, words):
+        total = 0
+        current = 0
+        negative = False
+
+        for word in words:
+            if word == "minus":
+                negative = True
+            elif word in ["tysiąc", "tysiące", "tysięcy"]:
+                if current == 0:
+                    current = 1
+                total += current * 1000
+                current = 0
+            elif word in self.num_words:
+                current += self.num_words[word]
+            else:
+                break
+
+        total += current
+        return -total if negative else total
 
     def preprocess_sqrt_fact(self, elements):
         if "pierwiastek" in elements:
             idx = elements.index("pierwiastek")
             expression = "math.sqrt({})"
-        if "silnia" in elements:
+        elif "silnia" in elements:
             idx = elements.index("silnia")
             expression = "math.factorial({})"
+        else:
+            return elements
+
         number = None
-        # if idx > 0 and elements[idx - 1] == "z" and idx > 1 and elements[idx - 2].isdigit():
-        #     print("First condition")
-        #     number = int(elements[idx - 2])
-        #     elements.pop(idx)
-        #     elements.pop(idx)
-        #     elements[idx] = expression.format(number)
-        #     print(elements)
         if idx < len(elements) - 1 and elements[idx + 1] == "z" and idx < len(elements) - 2 and elements[idx + 2].isdigit():
             number = int(elements[idx + 2])
             elements.pop(idx)
@@ -98,33 +147,6 @@ class VoiceCalculator:
             raise Exception
         return elements
 
-        # if number is not None:
-        #     self.result = eval(expression.format(number))
-        #     if math.fmod(self.result, 1.0) == 0:
-        #         self.result = int(self.result)
-        #     else:
-        #         self.result = round(self.result, 2)
-        #     # self.engine.say(f"Pierwiastek z {number} to {self.result}")
-        #     # self.engine.runAndWait()
-        #     # return
-        #     self.engine.say(f"Rezultat to {self.result}")
-        #     print("Rezultat to ", self.result)
-        #     self.engine.runAndWait()
-
-
-    # def preprocess_multi_digit(self, elements):
-    #     # print("I am here")
-    #     # IT DOES NOT WORK YET
-    #     replacements = {
-    #         "tysiące" : "*1000+",
-    #         "tysięcy" : "*1000+",
-    #         "tysiąc" : "*1000+"
-    #     }
-    #     for word, symbol in replacements.items():
-    #         elements = elements.replace(word, symbol)
-    #     return elements
-
-
     def calculate(self):
         try:
             self.recognize = self.r.recognize_google(self.audio_text, language='pl')
@@ -139,8 +161,7 @@ class VoiceCalculator:
             clean_text = self.preprocess_text(self.recognize)
             print("Po przetworzeniu:", clean_text)
             elements = clean_text.split()
-            if "tysiące" in elements or "tysiąc" in elements or "tysięcy" in elements:
-                elements = self.preprocess_multi_digit(elements)
+
             while "pierwiastek" in elements or "silnia" in elements:
                 elements = self.preprocess_sqrt_fact(elements)
 
@@ -156,6 +177,7 @@ class VoiceCalculator:
             self.engine.runAndWait()
 
         except Exception as e:
+            print("Błąd:", e)
             self.engine.say("Przepraszam, nie rozumiem działania. Spróbuj jeszcze raz")
             self.engine.runAndWait()
 
