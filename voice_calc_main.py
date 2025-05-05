@@ -31,7 +31,8 @@ class VoiceCalculator:
 
     def give_instruction(self):
         with sr.Microphone() as mike:
-            self.engine.say("Podaj swoje działanie, po usłyszeniu dźwięku. Jeśli chcesz zakończyć, powiedz stop.")
+            self.engine.say("Podaj swoje działanie, po usłyszeniu dźwięku. Jeśli chcesz zakończyć,"
+                            " powiedz: zakończ obliczenia.")
             self.engine.runAndWait()
             duration = 200  # milliseconds
             freq = 440  # Hz
@@ -152,7 +153,7 @@ class VoiceCalculator:
             self.recognize = self.r.recognize_google(self.audio_text, language='pl')
             print("Rozpoznane:", self.recognize)
 
-            if self.recognize.lower() == "stop":
+            if "zakończ" in  self.recognize.lower():
                 self.exit = True
                 self.engine.say("Dzięki za współpracę, do widzenia!")
                 self.engine.runAndWait()
