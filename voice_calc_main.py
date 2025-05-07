@@ -29,6 +29,26 @@ class VoiceCalculator:
             "tysiąc": 1000, "tysiące": 1000, "tysięcy": 1000
         }
 
+        self.replacements = {
+            "plus": "+",
+            "dodać": "+",
+            "minus": "-",
+            "razy": "*",
+            "x": "*",
+            "podzielić przez": "/",
+            "dzielone na": "/",
+            "podzielić": "/",
+            "dzielone": "/",
+            "do potęgi": "**",
+            "potęgi": "**",
+            "otwórz nawias": "(",
+            "zamknij nawias": ")",
+            "zamknij": ")",
+            "koniec": ")",
+            "otwórz": "(",
+            "√": "pierwiastek "
+        }
+
     def give_instruction(self):
         with sr.Microphone() as mike:
             self.engine.say("Podaj swoje działanie, po usłyszeniu dźwięku. Jeśli chcesz zakończyć,"
@@ -46,26 +66,7 @@ class VoiceCalculator:
         text = text.lower()
         text = text.replace("równa się", "")
 
-        replacements = {
-            "plus": "+",
-            "dodać" : "+",
-            "minus": "-",
-            "razy": "*",
-            "x" : "*",
-            "podzielić przez": "/",
-            "dzielone na" : "/",
-            "podzielić": "/",
-            "dzielone" : "/",
-            "do potęgi": "**",
-            "potęgi" : "**",
-            "otwórz nawias": "(",
-            "zamknij nawias": ")",
-            "zamknij" : ")",
-            "koniec" : ")",
-            "otwórz" : "(",
-            "√" : "pierwiastek "
-        }
-        for word, symbol in replacements.items():
+        for word, symbol in self.replacements.items():
             text = text.replace(word, symbol)
 
         text = self.replace_number_words(text)
@@ -74,6 +75,7 @@ class VoiceCalculator:
 
     def replace_number_words(self, text):
         words = text.split()
+        # print('Words: ', words)
         result = []
         buffer = []
 
@@ -89,6 +91,7 @@ class VoiceCalculator:
                         result.extend(buffer)
                     buffer = []
                 result.append(word)
+        # print(result)
 
         if buffer:
             try:
@@ -96,14 +99,14 @@ class VoiceCalculator:
                 result.append(str(number))
             except:
                 result.extend(buffer)
-
+        # print("Result: ", result)
         return ' '.join(result)
 
     def parse_number_words(self, words):
         total = 0
         current = 0
         negative = False
-
+        # print("Words: ", words)
         for word in words:
             if word == "minus":
                 negative = True
@@ -130,7 +133,6 @@ class VoiceCalculator:
         else:
             return elements
 
-        number = None
         if idx < len(elements) - 1 and elements[idx + 1] == "z" and idx < len(elements) - 2 and elements[idx + 2].isdigit():
             number = int(elements[idx + 2])
             elements.pop(idx)
