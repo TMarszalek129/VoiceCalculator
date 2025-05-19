@@ -1,9 +1,8 @@
 import speech_recognition as sr
 import pyttsx3
-import time
-import re
 import math
 import winsound
+
 
 class VoiceCalculator:
     def __init__(self):
@@ -75,7 +74,6 @@ class VoiceCalculator:
 
     def replace_number_words(self, text):
         words = text.split()
-        # print('Words: ', words)
         result = []
         buffer = []
 
@@ -91,7 +89,6 @@ class VoiceCalculator:
                         result.extend(buffer)
                     buffer = []
                 result.append(word)
-        # print(result)
 
         if buffer:
             try:
@@ -99,14 +96,12 @@ class VoiceCalculator:
                 result.append(str(number))
             except:
                 result.extend(buffer)
-        # print("Result: ", result)
         return ' '.join(result)
 
     def parse_number_words(self, words):
         total = 0
         current = 0
         negative = False
-        # print("Words: ", words)
         for word in words:
             if word == "minus":
                 negative = True
